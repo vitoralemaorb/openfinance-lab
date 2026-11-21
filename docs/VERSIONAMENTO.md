@@ -44,13 +44,29 @@ Descrição no imperativo, em português, curta e sem ponto final.
 ### Fluxo de uma tarefa
 
 ```bash
-git switch main && git pull              # parte da main atualizada
-git switch -c feat/nome-da-tarefa        # cria o branch da tarefa
+git tarefa feat/nome-da-tarefa   # sincroniza a main, cria e publica o branch
 # ... trabalha e faz commits ...
-git push -u origin feat/nome-da-tarefa   # envia o branch
+git push                       # envia os commits
 # abre o PR no GitHub, revisa e faz o squash merge
-git switch main && git pull              # traz o resultado do merge
+git finaliza                   # volta para a main, sincroniza e apaga o branch local
 ```
+
+### Aliases do projeto
+
+Configure uma vez por máquina:
+
+```bash
+git config --global alias.tarefa '!f() { if [ -z "$1" ]; then echo "Uso: git tarefa tipo/nome-da-branch"; return 1; fi; git switch main && git pull --prune && git switch -c "$1" && git push -u origin "$1"; }; f'
+
+git config --global alias.finaliza '!f() { atual=$(git branch --show-current); if [ "$atual" = "main" ]; then echo "Voce ja esta na main. Nada para finalizar."; return 1; fi; git switch main && git pull --prune || return 1; if git ls-remote --exit-code --heads origin "$atual" >/dev/null 2>&1; then echo "A branch $atual ainda existe no GitHub. O PR ja foi mergeado? Nada foi apagado."; return 1; fi; git branch -D "$atual" && echo "Branch $atual apagada. Main atualizada."; }; f'
+```
+
+- `git finaliza` só apaga o branch local se ele já sumiu do GitHub, ou seja, se o PR foi mergeado.
+- Usa `-D` porque, com squash merge, o Git local não reconhece o branch como mergeado.
+
+### Descrição do PR
+
+Todo PR abre com o template de `.github/pull_request_template.md`: o quê, por quê, como testar e checklist.
 
 ## 2. Versão do projeto (SemVer)
 
