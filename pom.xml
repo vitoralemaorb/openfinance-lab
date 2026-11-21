@@ -24,5 +24,6 @@
     </properties>
 
     <modules>
+        <module>banco-orion</module>
     </modules>
 </project>
