@@ -1,0 +1,20 @@
+# Maven: arquivos gerados na compilação
+target/
+
+# IntelliJ IDEA: configurações pessoais da IDE
+.idea/
+*.iml
+
+# VS Code e Eclipse, caso alguém use
+.vscode/
+.classpath
+.project
+.settings/
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Variáveis de ambiente e segredos: NUNCA vão para o GitHub
+.env
+*.env
