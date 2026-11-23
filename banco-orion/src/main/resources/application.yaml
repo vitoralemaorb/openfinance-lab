@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: banco-orion
+
+  # Importa o .env da raiz do projeto em desenvolvimento local.
+  # Em produção, as variáveis de ambiente do servidor têm prioridade.
+  config:
+    import:
+      - "optional:file:.env[.properties]"
+      - "optional:file:../.env[.properties]"
+
+  # Conexão com o PostgreSQL (docker-compose.yaml)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/banco_orion
+    username: ${ORION_DB_USER}
+    password: ${ORION_DB_PASSWORD}
+
+  # O Flyway cria e altera as tabelas; o Hibernate só valida.
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
