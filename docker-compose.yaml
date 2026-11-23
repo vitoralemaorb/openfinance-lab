@@ -1,0 +1,23 @@
+name: openfinance-lab
+
+services:
+  postgres-orion:
+    image: postgres:18
+    container_name: postgres-orion
+    environment:
+      POSTGRES_DB: banco_orion
+      POSTGRES_USER: ${ORION_DB_USER}
+      POSTGRES_PASSWORD: ${ORION_DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-orion-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ORION_DB_USER} -d banco_orion"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres-orion-data:
