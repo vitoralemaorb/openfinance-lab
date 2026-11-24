@@ -1,6 +1,6 @@
 # Versionamento
 
-Regras de versionamento do `openfinance-lab`. Seções futuras: banco de dados (Flyway) e produção.
+Regras de versionamento do `openfinance-lab`. Seção futura: produção.
 
 ## 1. Código (Git)
 
@@ -121,3 +121,70 @@ A versão maior fica na URL, como no Open Finance Brasil:
 - **Quem consome ignora campos desconhecidos.** Assim, campos novos nunca quebram ninguém.
 - Ao lançar a `v2`, a `v1` continua funcionando por um período de depreciação, sinalizado pelo cabeçalho de resposta `Sunset` com a data de desligamento.
 - Toda mudança de contrato entra no mesmo PR que atualiza a documentação da API.
+
+
+## 4. Banco de dados (Flyway)
+
+O Flyway é o **único** responsável por criar e alterar tabelas. O Hibernate apenas valida se as entidades batem com o banco (`ddl-auto: validate`).
+
+### Onde ficam as migrações
+
+Cada serviço tem as suas, em `src/main/resources/db/migration/`.
+
+### Nome dos arquivos
+
+Formato: `V<versão>__<descrição>.sql`, com **dois** underlines.
+
+| Arquivo | Leitura |
+| --- | --- |
+| `V1__cria_tabela_customer.sql` | Versão 1, cria a tabela de clientes |
+| `V2__cria_tabela_account.sql` | Versão 2, cria a tabela de contas |
+| `V3__adiciona_coluna_type_em_account.sql` | Versão 3, altera uma tabela existente |
+
+- Versões inteiras e sequenciais, por serviço: `V1`, `V2`, `V3`.
+- Descrição em português, minúsculas, começando por um verbo.
+
+### Regras
+
+- **Migração aplicada nunca é editada.** O Flyway guarda um checksum de cada arquivo; alterar um já aplicado impede a aplicação de subir. Para corrigir, crie uma nova versão.
+- **Uma mudança por migração.** Facilita revisar e entender o histórico.
+- **Antes de criar, confira a última versão**, inclusive em branches abertas. Duas migrações com o mesmo número geram erro.
+- **A migração entra no mesmo PR** que o código que depende dela.
+
+### Convenção de nomes
+
+| Elemento | Padrão | Exemplo |
+| --- | --- | --- |
+| Tabela | singular, inglês, `snake_case` | `customer`, `account` |
+| Coluna | `snake_case` | `created_at` |
+| Chave primária | `pk_<tabela>` | `pk_account` |
+| Chave estrangeira | `fk_<tabela>_<referência>` | `fk_account_customer` |
+| Unicidade | `uk_<tabela>_<coluna>` | `uk_customer_cpf` |
+| Índice | `idx_<tabela>_<colunas>` | `idx_account_transaction_account_id` |
+| Checagem | `ck_<tabela>_<regra>` | `ck_account_balance_positive` |
+
+- **Toda restrição tem nome explícito.** Nada de nomes gerados automaticamente: são ilegíveis e diferentes em cada banco.
+- **Evite palavras reservadas do SQL** como nome de tabela: `user` vira `app_user`, `transaction` vira `account_transaction`.
+
+### Tipos padrão
+
+| Dado | Tipo no PostgreSQL | Tipo no Java |
+| --- | --- | --- |
+| Identificador | `UUID` | `UUID` |
+| Dinheiro | `NUMERIC(19,2)` | `BigDecimal` |
+| Data e hora | `TIMESTAMPTZ` (sempre em UTC) | `Instant` |
+| Texto curto | `VARCHAR(n)` | `String` |
+| Estado (enum) | `VARCHAR(n)` | `enum` com `@Enumerated(EnumType.STRING)` |
+
+### Exemplo
+
+```sql
+CREATE TABLE account (
+    id          UUID          NOT NULL,
+    customer_id UUID          NOT NULL,
+    balance     NUMERIC(19,2) NOT NULL,
+    created_at  TIMESTAMPTZ   NOT NULL,
+    CONSTRAINT pk_account PRIMARY KEY (id),
+    CONSTRAINT fk_account_customer FOREIGN KEY (customer_id) REFERENCES customer (id)
+);
+```
